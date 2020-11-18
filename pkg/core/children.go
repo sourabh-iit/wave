@@ -108,7 +108,16 @@ func getChildNamesByType(obj podController) (map[string]configMetadata, map[stri
 			configMaps[cm.Name] = configMetadata{required: isRequired(cm.Optional), allKeys: true}
 		}
 		if s := vol.VolumeSource.Secret; s != nil {
-			secrets[s.SecretName] = configMetadata{required: isRequired(s.Optional), allKeys: true}
+			// check for items to get subset of secrets object
+			if(s.Items == nil) {
+				secrets[s.SecretName] = configMetadata{required: isRequired(s.Optional), allKeys: true}
+			} else {
+				keys := make(map[string]struct{})
+				for _, item := range s.Items {
+					keys[item.Key] = struct{}{}
+				}
+				secrets[s.SecretName] = configMetadata{required: isRequired(s.Optional), allKeys: false, keys: keys}
+			}
 		}
 	}
 
